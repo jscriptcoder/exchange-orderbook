@@ -1,0 +1,65 @@
+.container {
+  display: grid;
+  border: 1px solid rgb(37, 41, 48);
+  width: 100%;
+}
+
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  color: rgb(132, 142, 156);
+  font-size: 12px;
+}
+
+.header h3 {
+  margin: 0;
+  color: rgb(234, 236, 239);
+  font-size: 14px;
+}
+
+.groupSelect {
+  width: 100px;
+  font-size: 12px;
+}
+
+.body {
+  display: flex;
+}
+
+.buyTable,
+.sellTable {
+  flex: 1;
+}
+
+.bidPrice {
+  color: rgb(14, 203, 129);
+}
+
+.askPrice {
+  color: rgb(246, 70, 93);
+}
+
+.footer {
+  display: flex;
+  justify-content: center;
+  padding: 10px 16px;
+}
+
+.footer button {
+  margin-right: 10px;
+}
+
+.footer button:last-child {
+  margin-right: 0;
+}
+
+.toggleFeedButton {
+  background-color: slateblue;
+}
+
+.killFeedButton {
+  background-color: firebrick;
+} 

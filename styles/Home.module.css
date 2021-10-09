@@ -6,8 +6,18 @@
 }
 
 .header {
+  display: flex;
   height: 64px;
   padding: 10px 16px;
+  align-items: center;
+}
+
+.logo {
+  border: 3px solid rgb(240, 185, 11);
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
 }
 
 .exchangeName {
@@ -22,6 +32,11 @@
   justify-content: center;
   align-items: center;
   flex: 1;
+  padding: 0 16px;
+}
+
+.orderbookWrapper {
+  width: 100%;
 }
 
 .footer {

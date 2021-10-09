@@ -8,22 +8,27 @@ const Home: NextPage = () => {
   return (
     <div className={styles.container}>
       <Head>
-        <title>..:: My Exchange - Order Book ::..</title>
+        <title>..:: My Bit - Order Book ::..</title>
         <meta name="description" content="Implementation of an Exchange OrderBook" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
       <header className={styles.header}>
-        <div className={styles.exchangeName}>My Exchange</div>
+        <div className={styles.logo} />
+        <div className={styles.exchangeName}>
+          MyBit
+        </div>
       </header>
 
       <main className={styles.main}>
-        <OrderBook />
+        <div className={styles.orderbookWrapper}>
+          <OrderBook />
+        </div>
       </main>
 
       <footer className={styles.footer}>
         <small>
-          My Exchange ©
+          MyBit ©
           {' '}
           {new Date().getFullYear()}
         </small>
