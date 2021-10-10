@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "nodemon",
+    "build": "next build && tsc --project tsconfig.server.json",
+    "start": "cross-env NODE_ENV=production node dist/index.js",
     "lint": "next lint"
   },
   "dependencies": {
@@ -16,10 +16,14 @@
     "websocket": "^1.0.34"
   },
   "devDependencies": {
+    "@types/node": "^16.10.3",
     "@types/react": "17.0.27",
     "@types/websocket": "^1.0.4",
+    "cross-env": "^7.0.3",
     "eslint": "7.32.0",
     "eslint-config-next": "11.1.2",
+    "nodemon": "^2.0.13",
+    "ts-node": "^10.2.1",
     "typescript": "4.4.3"
   }
 }

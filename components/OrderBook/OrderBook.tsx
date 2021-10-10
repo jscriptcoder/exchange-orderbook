@@ -4,9 +4,10 @@ import styles from './OrderBook.module.css'
 import useOrderBook from './useOrderBook'
 import { amountFormatter, priceFormatter } from '../../utils/formatters'
 
-export default function OrderBook() {
+export default function OrderBook(): JSX.Element {
   const {
     market,
+    isFeedKilled,
     toggleFeedClick,
     killFeedClick,
   } = useOrderBook()
@@ -22,9 +23,9 @@ export default function OrderBook() {
           className={styles.groupSelect}
           size="small"
         >
-          <Select.Option value="0.01">0.01</Select.Option>
-          <Select.Option value="0.1">0.1</Select.Option>
-          <Select.Option value="1">1</Select.Option>
+          {market.sizes.map(size => (
+            <Select.Option key={size} value={size}>{size}</Select.Option>
+          ))}
         </Select>
       </div>
 
@@ -80,7 +81,7 @@ export default function OrderBook() {
       </div>
 
       <div className={styles.footer}>
-        <Button
+        <Button 
           type="primary"
           onClick={toggleFeedClick}
         >
@@ -90,7 +91,7 @@ export default function OrderBook() {
           type="primary" danger
           onClick={killFeedClick}
         >
-            Kill Feed
+            {isFeedKilled ? 'Restart Feed' : 'Kill Feed'}
           </Button>
       </div>
       

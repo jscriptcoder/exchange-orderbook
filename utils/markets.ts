@@ -1,24 +1,24 @@
-export enum Markets {
+export enum Market {
   PI_XBTUSD = 'PI_XBTUSD',
   PI_ETHUSD = 'PI_ETHUSD',
 }
 
 export type MarketInfo = {
-  name: Markets 
+  name: Market
   sizes: number[]
 }
 
 export type MarketsMap = {
-  [market in Markets]: MarketInfo
+  [market in Market]: MarketInfo
 }
 
 const markets: MarketsMap = {
   PI_XBTUSD: {
-    name: Markets.PI_XBTUSD,
+    name: Market.PI_XBTUSD,
     sizes: [0.5, 1, 2.5],
   },
   PI_ETHUSD: {
-    name: Markets.PI_ETHUSD,
+    name: Market.PI_ETHUSD,
     sizes: [0.05, 0.1, 0.25],
   }
 }
