@@ -1,24 +1,32 @@
-import { client as WebSocketClient } from 'websocket'
-import { createServer, IncomingMessage, ServerResponse } from 'http'
-import { parse } from 'url'
+import express, { Request, Response } from 'express'
 import next from 'next'
 import { NextServer } from 'next/dist/server/next'
+import debug from 'debug'
+import { start as wsStart } from './wsProxy'
+
+const log = debug('app:index')
+const logerr = debug('app:index:error')
 
 const port: number = parseInt(process.env.PORT || '3000', 10)
 const dev: boolean = process.env.NODE_ENV !== 'production'
-const app: NextServer = next({ dev })
-const handle = app.getRequestHandler()
+const nextApp: NextServer = next({ dev })
+const handle = nextApp.getRequestHandler()
 
-app.prepare().then(() => {
-  createServer((req: IncomingMessage, res: ServerResponse) => {
-    const parsedUrl = parse(req.url!, true)
-    handle(req, res, parsedUrl)
-  }).listen(port)
+nextApp.prepare()
+  .then(() => {
+    const expressApp = express()
 
-  // tslint:disable-next-line:no-console
-  console.log(
-    `> Server listening at http://localhost:${port} as ${
-      dev ? 'development' : process.env.NODE_ENV
-    }`
-  )
-})
+    expressApp.get('*', (req: Request, res: Response) => {
+      handle(req, res)
+    })
+
+    const httpServer = expressApp.listen(port, () => {
+      log(`Server listening on http://localhost:${port} as ${dev ? 'development' : process.env.NODE_ENV}`)
+    })
+
+    wsStart(httpServer)
+
+  })
+  .catch(err => {
+    logerr(err)
+  })
