@@ -1,0 +1,1 @@
+export const orderBookProtocol = 'order-book'

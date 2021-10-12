@@ -1,5 +1,5 @@
-export type PromiseResolve<T> = (value: T | PromiseLike<T>) => void
-export type PromiseReject = (reason?: any) => void
+type PromiseResolve<T> = (value: T | PromiseLike<T>) => void
+type PromiseReject = (reason?: any) => void
 
 export default class Deferred<T> {
     promise: Promise<T>

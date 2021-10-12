@@ -2,29 +2,19 @@ import {
   client as WebSocketClient,
   server as WebSocketServer,
   connection,
-  IUtf8Message,
   Message,
   request,
 } from 'websocket'
 import { Server } from 'http'
 import debug from 'debug'
 import Deferred from './Deferred'
+import { orderBookProtocol } from '../utils/config'
+import { ClientCommand, CommandType, ServiceCommand } from '../utils/command'
 
-const log = debug('app:wsProx')
-const logerr = debug('app:wsProx:error')
+const log = debug('app:wsProxy')
+const logerr = debug('app:wsProxy:error')
 
-interface ClientCommand {
-  type: string
-  payload: {[key: string]: string}
-}
-
-interface ServiceCommand {
-  event: string
-  feed: string,
-  product_ids: string[],
-}
-
-function sendCommandToService(event: string, productId: string, service: connection) {
+function sendCommandToService(event: CommandType, productId: string, service: connection) {
   log(`Sending event '${event}' with product '${productId}'`)
   const command: ServiceCommand = {
     event,
@@ -36,12 +26,12 @@ function sendCommandToService(event: string, productId: string, service: connect
 }
 
 function onmessage(command: ClientCommand, service: connection) {
-  const { payload } = command
 
   switch(command.type) {
-    case 'change-product':
-      sendCommandToService('unsubscribe', payload.oldProductId, service)
-      sendCommandToService('subscribe', payload.newProductId, service)
+    case CommandType.CHANGE_PRODUCT:
+      const { payload } = command
+      sendCommandToService(CommandType.UNSUBSCRIBE, payload.oldProductId, service)
+      sendCommandToService(CommandType.SUBSCRIBE, payload.newProductId, service)
       break
     // TODO: more commands
   }
@@ -69,21 +59,30 @@ async function connect2Service(wsApi: string): Promise<connection> {
 }
 
 async function onrequest(request: request) {
-  const clientConnection: connection = request.accept('order-book', request.origin)
+  const clientConnection: connection = request.accept(orderBookProtocol, request.origin)
   
-  log(`Client ${clientConnection} connected`)
+  log(`Client ${clientConnection.remoteAddress} connected`)
 
   const serviceConnection: connection = await connect2Service('wss://www.cryptofacilities.com/ws/v1')
 
-  clientConnection.on('close', (code: number, desc: string) => {
-    log(`Client ${clientConnection} disconnected with code ${code}`)
-    serviceConnection.close(code)
+  clientConnection.on('close', (code: number) => {
+    log(`Client ${clientConnection.remoteAddress} disconnected with code ${code}`)
+    serviceConnection.close()
   })
 
   clientConnection.on('message', (data: Message) => {
-    const command: ClientCommand = JSON.parse((<IUtf8Message>data).utf8Data)
-    log(`Command received`, command)
-    onmessage(command, serviceConnection)
+    if (data.type === 'utf8') {
+      const command: ClientCommand = JSON.parse(data.utf8Data)
+      log(`Command received`, command)
+      onmessage(command, serviceConnection)
+    }
+  })
+
+  serviceConnection.on('message', (data: Message) => {
+    if (data.type === 'utf8') {
+      // Forwarding the data comming from the service (cryptofacilities) to the client (browser)
+      clientConnection.sendUTF(data.utf8Data)
+    }
   })
 }
 

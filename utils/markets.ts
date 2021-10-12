@@ -3,7 +3,7 @@ export enum Market {
   PI_ETHUSD = 'PI_ETHUSD',
 }
 
-export type MarketInfo = {
+export interface MarketInfo {
   name: Market
   sizes: number[]
 }
