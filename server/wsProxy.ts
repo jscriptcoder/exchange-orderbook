@@ -10,15 +10,17 @@ import debug from 'debug'
 import Deferred from './Deferred'
 import { orderBookProtocol } from '../utils/config'
 import { ClientCommand, CommandType, ServiceCommand } from '../utils/command'
+import { Market } from '../utils/markets'
+import { TypeFeed } from '../utils/messageEvents'
 
 const log = debug('app:wsProxy')
 const logerr = debug('app:wsProxy:error')
 
-function sendCommandToService(event: CommandType, productId: string, service: connection) {
+function sendCommandToService(event: CommandType, productId: Market, service: connection) {
   log(`Sending event '${event}' with product '${productId}'`)
   const command: ServiceCommand = {
     event,
-    feed: 'book_ui_1',
+    feed: TypeFeed.BOOK,
     product_ids: [productId],
   }
   const sendData: string = JSON.stringify(command)
@@ -28,12 +30,13 @@ function sendCommandToService(event: CommandType, productId: string, service: co
 function onmessage(command: ClientCommand, service: connection) {
 
   switch(command.type) {
-    case CommandType.CHANGE_PRODUCT:
-      const { payload } = command
-      sendCommandToService(CommandType.UNSUBSCRIBE, payload.oldProductId, service)
-      sendCommandToService(CommandType.SUBSCRIBE, payload.newProductId, service)
+    case CommandType.SUBSCRIBE:
+      sendCommandToService(CommandType.SUBSCRIBE, command.payload.productId, service)
       break
-    // TODO: more commands
+    
+    case CommandType.UNSUBSCRIBE:
+      sendCommandToService(CommandType.UNSUBSCRIBE, command.payload.productId, service)
+      break
   }
 }
 
@@ -71,6 +74,8 @@ async function onrequest(request: request) {
   })
 
   clientConnection.on('message', (data: Message) => {
+    log('Client message received', data)
+
     if (data.type === 'utf8') {
       const command: ClientCommand = JSON.parse(data.utf8Data)
       log(`Command received`, command)
@@ -79,6 +84,8 @@ async function onrequest(request: request) {
   })
 
   serviceConnection.on('message', (data: Message) => {
+    log('Service message received', data)
+
     if (data.type === 'utf8') {
       // Forwarding the data comming from the service (cryptofacilities) to the client (browser)
       clientConnection.sendUTF(data.utf8Data)

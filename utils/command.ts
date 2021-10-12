@@ -1,29 +1,34 @@
+import { Market } from './markets'
+import { TypeFeed } from './messageEvents'
+
 export enum CommandType {
   SUBSCRIBE = 'subscribe',
   UNSUBSCRIBE = 'unsubscribe',
   CONNECT = 'connect',
-  CHANGE_PRODUCT = 'change-product',
 }
 
 export interface ConnectCommand {
-  type: CommandType.CONNECT,
+  type: CommandType.CONNECT
+}
+
+export interface SubscribeProduct {
+  type: CommandType.SUBSCRIBE
   payload: {
-    productId: string
+    productId: Market
   }
 }
 
-export interface ChangeProductCommand {
-  type: CommandType.CHANGE_PRODUCT,
+export interface UnsubscribeProduct {
+  type: CommandType.UNSUBSCRIBE
   payload: {
-    oldProductId: string
-    newProductId: string
+    productId: Market
   }
 }
 
-export type ClientCommand = ConnectCommand | ChangeProductCommand
+export type ClientCommand = ConnectCommand | SubscribeProduct | UnsubscribeProduct
 
 export interface ServiceCommand {
   event: CommandType
-  feed: string
-  product_ids: string[]
+  feed: TypeFeed
+  product_ids: Market[]
 }

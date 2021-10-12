@@ -1,68 +1,114 @@
-import { ClientCommand, CommandType, ServiceCommand, ConnectCommand } from '../../utils/command'
+import { ClientCommand, CommandType, ServiceCommand, ConnectCommand, SubscribeProduct, UnsubscribeProduct } from '../../utils/command'
 import { orderBookProtocol } from '../../utils/config'
-import { ServiceEvent, ServiceEventType, ServiceInfo } from '../../utils/socketEvents'
-
-type ConnectPayload = ConnectCommand['payload']
+import { ClientConnected, ClientEventType, ServiceEvent, ServiceEventType, StapShot, TypeFeed } from '../../utils/messageEvents'
 
 let wsClient: WebSocket
 
-function onmessage (event: MessageEvent<ServiceEvent>, cmdPayload: {[key: string]: any}) {
-  const serviceEvent: ServiceEvent = event.data
+function onmessage(event: MessageEvent) {
+  const serviceEvent: ServiceEvent = JSON.parse(event.data)
   console.log('[websocket.onmessage] Event received from service', serviceEvent)
 
-  switch(serviceEvent.event) {
+  switch (serviceEvent.event) {
     case ServiceEventType.INFO:
-      const { productId } = <ConnectPayload>cmdPayload
+      console.log(`[websocket.onmessage] Client connected`)
 
-      console.log(`[websocket.onmessage] Subscribing to ${productId}`)
-
-      const subscribeCommand: ServiceCommand = {
-        event: CommandType.SUBSCRIBE,
-        feed: 'book_ui_1',
-        product_ids: [productId],
+      const message: ClientConnected = {
+        event: ClientEventType.CONNECTED
       }
 
-      wsClient.send(JSON.stringify(subscribeCommand))
+      self.postMessage(message)
       break
-    
+
     case ServiceEventType.SUBSCRIBED:
       console.log(`[websocket.onmessage] Subscribed to ${serviceEvent.product_ids}`)
       break
-    
+
     case ServiceEventType.UNSUBSCRIBED:
       console.log(`[websocket.onmessage] Unsubscribed from ${serviceEvent.product_ids}`)
       break
-    
+
     default: // Orders are comming
-      // TODO
+      if (serviceEvent.feed === TypeFeed.BOOK_SNAPSHOT) {
+        console.log(`[websocket.onmessage] Orders snapshot`)
+
+        const message: StapShot = {
+          event: ClientEventType.SNAPSHOT,
+          numLevels: serviceEvent.numLevels,
+          bids: serviceEvent.bids,
+          asks: serviceEvent.asks,
+        }
+
+        self.postMessage(message)
+      } else {
+        console.log(`[websocket.onmessage] Incomming orders`)
+
+        // const message: ClientOrders = {
+        //   event: ClientEventType.ORDERS,
+        // }
+
+        // self.postMessage(message)
+      }
+      
+      break
   }
+}
+
+function onerror(err: Event) {
+  console.error('[websocket.onerror] There was an error', err)
+}
+
+function onclose(event: CloseEvent) {
+  console.log('[websocket.onclose] Socket closed')
 }
 
 self.addEventListener('message', (event: MessageEvent<ClientCommand>) => {
   console.log('[worker.onmessage] Command received', event.data)
 
   const command: ClientCommand = event.data
-  const { payload } = command
 
-  switch(command.type) {
+  switch (command.type) {
     case CommandType.CONNECT:
+      if (wsClient) {
+        wsClient.close()
+      }
+
       const port: number = parseInt(process.env.PORT || '3000', 10)
 
       console.log(`Connecting to 'ws://0.0.0.0:${port}', protocol '${orderBookProtocol}'`)
       wsClient = new WebSocket(`ws://0.0.0.0:${port}`, orderBookProtocol)
 
-      wsClient.addEventListener('message', (event: MessageEvent) => {
-        onmessage(event, payload)
-      })
+      wsClient.addEventListener('message', onmessage)
+      wsClient.addEventListener('error', onerror)
+      wsClient.addEventListener('close', onclose)
 
-      wsClient.addEventListener('error', (err: Event) => {
-        console.error('[websocket.onerror] There was an error', err)
-      })
+      break
 
-      wsClient.addEventListener('close', (event: CloseEvent) => {
-        console.log('[websocket.onclose] Socket closed')
-      })
+    case CommandType.SUBSCRIBE:
+      if (wsClient) {
+        const { productId } = command.payload
 
+        const subscribeCmd: SubscribeProduct = {
+          type: CommandType.SUBSCRIBE,
+          payload: { productId }
+        }
+
+        console.log(`Subscribing to ${productId}`)
+        wsClient.send(JSON.stringify(subscribeCmd))
+      }
+      break
+    
+    case CommandType.UNSUBSCRIBE:
+      if (wsClient) {
+        const { productId } = command.payload
+
+        const unsubscribeCmd: UnsubscribeProduct = {
+          type: CommandType.UNSUBSCRIBE,
+          payload: { productId }
+        }
+
+        console.log(`Unsubscribing from ${productId}`)
+        wsClient.send(JSON.stringify(unsubscribeCmd))
+      }
       break
   }
 })

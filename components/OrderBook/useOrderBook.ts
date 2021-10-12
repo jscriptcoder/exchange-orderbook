@@ -6,7 +6,8 @@ import {
 } from 'react'
 import debug from 'debug'
 import markets, { Market, MarketInfo } from '../../utils/markets'
-import { CommandType } from '../../utils/command'
+import { CommandType, ConnectCommand, SubscribeProduct } from '../../utils/command'
+import { ClientEvent, ClientEventType } from '../../utils/messageEvents'
 
 const log = debug('app:useOrderBook')
 const logerr = debug('app:useOrderBook:error')
@@ -20,18 +21,44 @@ export default function useOrderBook() {
   useEffect(() => {
     orderProvider.current = new Worker(new URL('./orderProvider.worker.ts', import.meta.url))
     
-    orderProvider.current.addEventListener('message', (event: MessageEvent) => {
-      log('[orderProvider.onmessage] Orders received from worker', event.data)
+    orderProvider.current.addEventListener('message', (event: MessageEvent<ClientEvent>) => {
+      const clientEvent: ClientEvent = event.data
+      log('[orderProvider.onmessage] Message received from worker', event.data)
+
+      if(orderProvider.current) {
+        switch(clientEvent.event) {
+
+          case ClientEventType.CONNECTED:
+            const cmd: SubscribeProduct = {
+              type: CommandType.SUBSCRIBE,
+              payload: { productId: market.name}
+            }
+
+            orderProvider.current.postMessage(cmd)
+            break
+          
+          case ClientEventType.SUBSCRIBED:
+            // TODO: do we want to do something?
+            break
+          
+          case ClientEventType.UNSUBSCRIBED:
+            // TODO: do we want to do something?
+            break
+          
+          case ClientEventType.SNAPSHOT:
+            break
+          
+          case ClientEventType.ORDERS:
+        }
+      }
     })
 
     orderProvider.current.addEventListener('error', (err: ErrorEvent) => {
       logerr('[orderProvider.onerror] Error ocurred', err)
     })
 
-    orderProvider.current.postMessage({
-      type: CommandType.CONNECT,
-      productId: market.name, // Subscribe right away to this market
-    })
+    const cmd: ConnectCommand = { type: CommandType.CONNECT }
+    orderProvider.current.postMessage(cmd)
 
     return () => {
       if (orderProvider.current) {
