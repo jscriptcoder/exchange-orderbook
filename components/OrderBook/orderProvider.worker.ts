@@ -1,6 +1,6 @@
 import { ClientCommand, CommandType, ServiceCommand, ConnectCommand, SubscribeProduct, UnsubscribeProduct } from '../../utils/command'
 import { orderBookProtocol } from '../../utils/config'
-import { ClientConnected, ClientEventType, ServiceEvent, ServiceEventType, StapShot, TypeFeed } from '../../utils/messageEvents'
+import { ClientConnected, ClientEventType, ClientOrders, ClientSubscribed, ClientUnsubscribed, ServiceEvent, ServiceEventType, StapShot, TypeFeed } from '../../utils/messageEvents'
 
 let wsClient: WebSocket
 
@@ -12,41 +12,57 @@ function onmessage(event: MessageEvent) {
     case ServiceEventType.INFO:
       console.log(`[websocket.onmessage] Client connected`)
 
-      const message: ClientConnected = {
+      const connectedMsg: ClientConnected = {
         event: ClientEventType.CONNECTED
       }
 
-      self.postMessage(message)
+      self.postMessage(connectedMsg)
       break
 
     case ServiceEventType.SUBSCRIBED:
       console.log(`[websocket.onmessage] Subscribed to ${serviceEvent.product_ids}`)
+
+      const subscribedMsg: ClientSubscribed = {
+        event: ClientEventType.SUBSCRIBED,
+        product_id: serviceEvent.product_ids[0]
+      }
+
+      self.postMessage(subscribedMsg)
       break
 
     case ServiceEventType.UNSUBSCRIBED:
       console.log(`[websocket.onmessage] Unsubscribed from ${serviceEvent.product_ids}`)
+
+      const unsubscribedMsg: ClientUnsubscribed = {
+        event: ClientEventType.UNSUBSCRIBED,
+        product_id: serviceEvent.product_ids[0]
+      }
+
+      self.postMessage(unsubscribedMsg)
       break
 
     default: // Orders are comming
       if (serviceEvent.feed === TypeFeed.BOOK_SNAPSHOT) {
         console.log(`[websocket.onmessage] Orders snapshot`)
 
-        const message: StapShot = {
+        const snapShotMsg: StapShot = {
           event: ClientEventType.SNAPSHOT,
           numLevels: serviceEvent.numLevels,
           bids: serviceEvent.bids,
           asks: serviceEvent.asks,
         }
 
-        self.postMessage(message)
+        self.postMessage(snapShotMsg)
       } else {
         console.log(`[websocket.onmessage] Incomming orders`)
 
-        // const message: ClientOrders = {
-        //   event: ClientEventType.ORDERS,
-        // }
+        const ordersMsg: ClientOrders = {
+          event: ClientEventType.ORDERS,
+          bids: serviceEvent.bids,
+          asks: serviceEvent.asks,
+        }
 
-        // self.postMessage(message)
+        self.postMessage(ordersMsg)
       }
       
       break
@@ -74,7 +90,7 @@ self.addEventListener('message', (event: MessageEvent<ClientCommand>) => {
 
       const port: number = parseInt(process.env.PORT || '3000', 10)
 
-      console.log(`Connecting to 'ws://0.0.0.0:${port}', protocol '${orderBookProtocol}'`)
+      console.log(`[worker.onmessage] Connecting to 'ws://0.0.0.0:${port}', protocol '${orderBookProtocol}'`)
       wsClient = new WebSocket(`ws://0.0.0.0:${port}`, orderBookProtocol)
 
       wsClient.addEventListener('message', onmessage)
@@ -92,7 +108,7 @@ self.addEventListener('message', (event: MessageEvent<ClientCommand>) => {
           payload: { productId }
         }
 
-        console.log(`Subscribing to ${productId}`)
+        console.log(`[worker.onmessage] Subscribing to ${productId}`)
         wsClient.send(JSON.stringify(subscribeCmd))
       }
       break
@@ -106,7 +122,7 @@ self.addEventListener('message', (event: MessageEvent<ClientCommand>) => {
           payload: { productId }
         }
 
-        console.log(`Unsubscribing from ${productId}`)
+        console.log(`[worker.onmessage] Unsubscribing from ${productId}`)
         wsClient.send(JSON.stringify(unsubscribeCmd))
       }
       break
