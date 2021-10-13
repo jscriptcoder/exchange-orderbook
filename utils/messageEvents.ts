@@ -79,14 +79,14 @@ export interface ClientUnsubscribed {
   product_id: Market
 }
 
-export interface StapShot {
+export interface OrdersStapShot {
   event: ClientEventType.SNAPSHOT
   numLevels: number
   bids: number[][]
   asks: number[][]
 }
 
-export interface ClientOrders {
+export interface OrdersChange {
   event: ClientEventType.ORDERS,
   // TODO: to be decided
   bids: number[][]
@@ -98,5 +98,5 @@ export type ClientEvent
   | ClientDisconnected 
   | ClientSubscribed 
   | ClientUnsubscribed 
-  | StapShot 
-  | ClientOrders
+  | OrdersStapShot 
+  | OrdersChange

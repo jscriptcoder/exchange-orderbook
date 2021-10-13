@@ -6,9 +6,11 @@ import { amountFormatter, priceFormatter } from '../../utils/formatters'
 
 export default function OrderBook(): JSX.Element {
   const {
+    state,
     market,
-    orders,
     groupSize,
+    orders,
+    spread,
     isFeedKilled,
     groupSizeChange,
     toggleFeedClick,
@@ -20,14 +22,24 @@ export default function OrderBook(): JSX.Element {
 
       <div className={styles.header}>
         <h3>Order Book</h3>
-        <div>Spread 17.0 (0.05%)</div>
+        <div>
+          Spread:
+          {' '}
+          <span className={styles.spread}>
+            {spread
+              ? `${spread[0].toFixed(1)} (${spread[1].toFixed(2)}%)`
+              : '...'
+            }
+          </span>
+        </div>
+
         <Select
           value={groupSize}
           className={styles.groupSelect}
           size="small"
           onChange={groupSizeChange}
         >
-          {market.sizes.map(size => (
+          {market?.sizes.map(size => (
             <Select.Option key={size} value={size}>{size}</Select.Option>
           ))}
         </Select>
@@ -97,20 +109,20 @@ export default function OrderBook(): JSX.Element {
       </div>
 
       <div className={styles.footer}>
-        <Button 
+        <Button
           type="primary"
           onClick={toggleFeedClick}
         >
-          Toogle Feed: {market.name}
+          Toogle Feed: {market?.name}
         </Button>
         <Button
           type="primary" danger
           onClick={killFeedClick}
         >
-            {isFeedKilled ? 'Restart Feed' : 'Kill Feed'}
-          </Button>
+          {isFeedKilled ? 'Restart Feed' : 'Kill Feed'}
+        </Button>
       </div>
-      
+
     </div>
   )
 }

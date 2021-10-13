@@ -18,7 +18,7 @@ const logerr = debug('app:wsProxy:error')
 
 // [Websocket] Proxy => Service
 function sendCommandToService(event: CommandType, productId: Market, service: connection) {
-  log(`Sending event '${event}' with product '${productId}'`)
+  log(`[sendCommandToService] Sending event '${event}' with product '${productId}'`)
   const command: ServiceCommand = {
     event,
     feed: TypeFeed.BOOK,
@@ -43,18 +43,18 @@ function onmessage(command: ClientCommand, service: connection) {
 }
 
 async function connect2Service(wsApi: string): Promise<connection> {
-  log(`Connecting to ${wsApi}...`)
+  log(`[connect2Service] Connecting to ${wsApi}...`)
 
   const wsServiceClient = new WebSocketClient()
   const deferredConnection = new Deferred<connection>()
 
   wsServiceClient.on('connect', (connection: connection) => {
-    log(`Connection to ${wsApi} established`)
+    log(`[wsServiceClient.connect] Connection to ${wsApi} established`)
     deferredConnection.resolve(connection)
   })
 
   wsServiceClient.on('connectFailed', (err: Error) => {
-    logerr(`Connection to ${wsApi} failed. Error`,err)
+    logerr(`[wsServiceClient.connectFailed] Connection to ${wsApi} failed. Error`,err)
     deferredConnection.reject(err)
   })
 
@@ -66,18 +66,18 @@ async function connect2Service(wsApi: string): Promise<connection> {
 async function onrequest(request: request) {
   const clientConnection: connection = request.accept(orderBookProtocol, request.origin)
   
-  log(`Client ${clientConnection.remoteAddress} connected`)
+  log(`[onrequest] Client ${clientConnection.remoteAddress} connected`)
 
   const serviceConnection: connection = await connect2Service('wss://www.cryptofacilities.com/ws/v1')
 
   clientConnection.on('close', (code: number) => {
-    log(`Client ${clientConnection.remoteAddress} disconnected with code ${code}`)
+    log(`[clientConnection.close] Client ${clientConnection.remoteAddress} disconnected with code ${code}`)
     serviceConnection.close()
   })
 
   // [Websocket} Client => Proxy
   clientConnection.on('message', (data: Message) => {
-    log('Client message received', data)
+    log('[clientConnection.message] Client message received', data)
 
     if (data.type === 'utf8') {
       const command: ClientCommand = JSON.parse(data.utf8Data)
@@ -88,7 +88,7 @@ async function onrequest(request: request) {
 
   // [Websocket] Service => Proxy => Client (Browser)
   serviceConnection.on('message', (data: Message) => {
-    // log('Service message received', data)
+    // log('[serviceConnection.message] Service message received', data)
 
     if (data.type === 'utf8') {
       // Forwarding the data comming from the service (cryptofacilities) to the client (browser)

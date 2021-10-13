@@ -2,12 +2,12 @@ import {
   useState,
   useCallback,
   useEffect,
-  useRef
+  useRef,
+  useMemo
 } from 'react'
 import debug from 'debug'
-import markets, { Market, MarketInfo } from '../../utils/markets'
-import { CommandType, ConnectCommand, SubscribeProduct } from '../../utils/command'
-import { ClientEvent, ClientEventType, StapShot } from '../../utils/messageEvents'
+import markets, { Market } from '../../utils/markets'
+import OrderBookModel, { OrderBookModelUI } from './OrderBookModel'
 
 const log = debug('app:useOrderBook')
 const logerr = debug('app:useOrderBook:error')
@@ -18,87 +18,55 @@ export interface Orders {
 }
 
 export default function useOrderBook() {
-  const [ state, setState ] = useState(ClientEventType.DISCONNECTED)
-  const [ market, setMarket ] = useState<MarketInfo>(markets.PI_XBTUSD)
-  const [ groupSize, setGroupSize ] = useState<number>(markets.PI_XBTUSD.sizes[0])
-  const [ orders, setOrders ] = useState<Orders | null>(null)
   const [ isFeedKilled, killFeed ] = useState<boolean>(false)
-  const orderProvider = useRef<Worker>()
+  const workerRef = useRef<Worker>()
+  const [ orderBook, setOrderBook ] = useState(new OrderBookModel(markets.PI_XBTUSD))
+  const [ uiState, setUIState ] = useState<OrderBookModelUI>(orderBook.ui)
 
   useEffect(() => {
-    orderProvider.current = new Worker(new URL('./orderProvider.worker.ts', import.meta.url))
+    workerRef.current = new Worker(new URL('./orderProvider.worker.ts', import.meta.url))
+    orderBook.setWorker(workerRef.current)
+    orderBook.on('uichange', () => setUIState(orderBook.ui))
+    orderBook.connect()
     
-    orderProvider.current.addEventListener('message', (event: MessageEvent<ClientEvent>) => {
-      const clientEvent: ClientEvent = event.data
-      log('[orderProvider.onmessage] Message received from worker', event.data)
-
-      if(orderProvider.current) {
-        switch(clientEvent.event) {
-
-          case ClientEventType.CONNECTED:
-            setState(clientEvent.event)
-
-            const cmd: SubscribeProduct = {
-              type: CommandType.SUBSCRIBE,
-              payload: { productId: market.name}
-            }
-
-            orderProvider.current.postMessage(cmd)
-            break
-          
-          case ClientEventType.SUBSCRIBED:
-          case ClientEventType.UNSUBSCRIBED:
-          case ClientEventType.DISCONNECTED:
-            setState(clientEvent.event)
-            break
-          
-          case ClientEventType.SNAPSHOT:
-            const snapshot = <StapShot>event.data
-            setOrders({
-              bids: snapshot.bids,
-              asks: snapshot.asks,
-            })
-            break
-          
-          case ClientEventType.ORDERS:
-        }
-      }
-    })
-
-    orderProvider.current.addEventListener('error', (err: ErrorEvent) => {
-      logerr('[orderProvider.onerror] Error ocurred', err)
-    })
-
-    const cmd: ConnectCommand = { type: CommandType.CONNECT }
-    orderProvider.current.postMessage(cmd)
-
-    return () => {
-      if (orderProvider.current) {
-        orderProvider.current.terminate()
-      }
-    }
+    return () => orderBook.destroy()
   }, [])
 
-  const groupSizeChange = useCallback((newGroupSize: number) => {
-    setGroupSize(newGroupSize)
-  }, [])
+  const spread = useMemo(() => orderBook.spread, [orderBook.spread])
+
+  const groupSizeChange = useCallback((groupSize: number) => {
+    orderBook.setUI({ groupSize })
+  }, [orderBook])
 
   const toggleFeedClick = useCallback(() => {
-    if (market.name === Market.PI_XBTUSD) {
-      setMarket(markets.PI_ETHUSD)
-    } else {
-      setMarket(markets.PI_XBTUSD)
+    switch(orderBook.ui.market?.name) {
+      case Market.PI_XBTUSD:
+        orderBook.setUI({
+          market: markets.PI_ETHUSD,
+          groupSize: markets.PI_ETHUSD.sizes[0]
+        })
+
+        orderBook.unsubscribe(Market.PI_XBTUSD)
+        break
+      
+      case Market.PI_ETHUSD:
+        orderBook.setUI({
+          market: markets.PI_XBTUSD,
+          groupSize: markets.PI_XBTUSD.sizes[0]
+        })
+
+        orderBook.unsubscribe(Market.PI_ETHUSD)
+        break
     }
-  }, [market])
+  }, [orderBook])
 
   const killFeedClick = useCallback(() => {
     killFeed(!isFeedKilled)
   }, [isFeedKilled])
 
   return {
-    market,
-    orders,
-    groupSize,
+    ...uiState,
+    spread,
     isFeedKilled,
     groupSizeChange,
     toggleFeedClick,

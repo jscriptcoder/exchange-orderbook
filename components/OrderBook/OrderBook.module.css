@@ -29,6 +29,10 @@
   display: flex;
 }
 
+.spread {
+  font-family: monospace;
+}
+
 .buyTable,
 .sellTable {
   flex: 1;

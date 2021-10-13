@@ -5,10 +5,15 @@ export enum CommandType {
   SUBSCRIBE = 'subscribe',
   UNSUBSCRIBE = 'unsubscribe',
   CONNECT = 'connect',
+  DISCONNECT = 'disconnect',
 }
 
 export interface ConnectCommand {
   type: CommandType.CONNECT
+}
+
+export interface DisconnectCommand {
+  type: CommandType.DISCONNECT
 }
 
 export interface SubscribeProduct {
@@ -25,7 +30,11 @@ export interface UnsubscribeProduct {
   }
 }
 
-export type ClientCommand = ConnectCommand | SubscribeProduct | UnsubscribeProduct
+export type ClientCommand 
+  = ConnectCommand 
+  | DisconnectCommand 
+  | SubscribeProduct 
+  | UnsubscribeProduct
 
 export interface ServiceCommand {
   event: CommandType
