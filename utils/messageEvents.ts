@@ -88,7 +88,6 @@ export interface OrdersStapShot {
 
 export interface OrdersChange {
   event: ClientEventType.ORDERS,
-  // TODO: to be decided
   bids: number[][]
   asks: number[][]
 }

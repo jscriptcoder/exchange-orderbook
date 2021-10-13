@@ -15,18 +15,23 @@ import {
   ServiceEvent,
   ServiceEventType,
   OrdersStapShot,
-  TypeFeed } from '../../utils/messageEvents'
+  TypeFeed,
+} from '../../utils/messageEvents'
 
-let wsClient: WebSocket
-let snapshot: {
-  numLevels: number
+type Sort = 'asc' | 'desc'
+
+interface SnapShot {
+  numLevels: number,
   bids: number[][]
   asks: number[][]
 }
 
-const processOrders = (orders: number[][], sort: 'asc' | 'desc' = 'asc'): number[][] => (
+let wsClient: WebSocket
+let snapshot: SnapShot
+
+export const processOrders = (orders: number[][], sort: Sort = 'asc', limit: number = 25): number[][] => (
   orders
-    // make sure it's sorted
+    // make sure it's sorted (mutates original)
     .sort((order1: number[], order2: number[]) => (
       (order1[0] > order2[0] ? 1 : -1) * (sort === 'asc' ? 1 : -1)
     ))
@@ -36,7 +41,27 @@ const processOrders = (orders: number[][], sort: 'asc' | 'desc' = 'asc'): number
       acc.push([...order, totalSize])
       return acc
     }, [])
+    .slice(0, limit)
 )
+
+export const mergeChangesAndProcess = (changes: number[][], orders: number[][], sort: Sort = 'asc', limit: number = 25) => {
+  changes.forEach((change: number[]) => {
+    const orderIndex = orders.findIndex((order: number[]) => order[0] === change[0]) // same price level?
+
+    if (orderIndex >= 0) {
+      if (change[1] > 0) {
+        orders[orderIndex][1] = change[1] // change the size (mutates original)
+      } else {
+        orders.splice(orderIndex, 1) // size is 0, delete the order (mutates original)
+      }
+    } else {
+      change[1] > 0 && orders.push(change)
+    }
+  })
+  
+  return processOrders(orders, sort)
+
+}
 
 // [Websocket] Service to Worker
 function onmessage(event: MessageEvent): void {
@@ -82,8 +107,8 @@ function onmessage(event: MessageEvent): void {
 
         snapshot = {
           numLevels: serviceEvent.numLevels,
-          bids: processOrders(serviceEvent.bids, 'desc'),
-          asks: processOrders(serviceEvent.asks, 'asc'),
+          bids: processOrders(serviceEvent.bids.slice(), 'desc', serviceEvent.numLevels),
+          asks: processOrders(serviceEvent.asks.slice(), 'asc', serviceEvent.numLevels),
         }
 
         const snapShotMsg: OrdersStapShot = {
@@ -97,9 +122,8 @@ function onmessage(event: MessageEvent): void {
 
         const ordersMsg: OrdersChange = {
           event: ClientEventType.ORDERS,
-          // TODO: Think about better format for the UI
-          bids: serviceEvent.bids,
-          asks: serviceEvent.asks,
+          bids: mergeChangesAndProcess(serviceEvent.bids, snapshot.bids, 'desc', snapshot.numLevels),
+          asks: mergeChangesAndProcess(serviceEvent.asks, snapshot.asks, 'asc', snapshot.numLevels),
         }
 
         self.postMessage(ordersMsg)

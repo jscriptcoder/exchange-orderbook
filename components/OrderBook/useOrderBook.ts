@@ -39,7 +39,7 @@ export default function useOrderBook() {
   }, [orderBook])
 
   const toggleFeedClick = useCallback(() => {
-    switch(orderBook.ui.market?.name) {
+    switch(uiState.market?.name) {
       case Market.PI_XBTUSD:
         orderBook.setUI({
           market: markets.PI_ETHUSD,
@@ -58,7 +58,7 @@ export default function useOrderBook() {
         orderBook.unsubscribe(Market.PI_ETHUSD)
         break
     }
-  }, [orderBook])
+  }, [uiState])
 
   const killFeedClick = useCallback(() => {
     killFeed(!isFeedKilled)

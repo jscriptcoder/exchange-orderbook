@@ -52,6 +52,7 @@ export default function OrderBook(): JSX.Element {
           dataSource={orders?.bids}
           pagination={false}
           scroll={{ y: 340 }}
+          rowKey={(order: number[]) => order[0]}
         >
           <Table.Column
             title="TOTAL"
@@ -82,6 +83,7 @@ export default function OrderBook(): JSX.Element {
           dataSource={orders?.asks}
           pagination={false}
           scroll={{ y: 340 }}
+          rowKey={(order: number[]) => order[0]}
         >
           <Table.Column
             title="PRICE"

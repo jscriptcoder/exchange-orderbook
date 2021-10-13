@@ -42,8 +42,8 @@ function onmessage(command: ClientCommand, service: connection) {
   }
 }
 
-async function connect2Service(wsApi: string): Promise<connection> {
-  log(`[connect2Service] Connecting to ${wsApi}...`)
+async function connectToService(wsApi: string): Promise<connection> {
+  log(`[connectToService] Connecting to ${wsApi}...`)
 
   const wsServiceClient = new WebSocketClient()
   const deferredConnection = new Deferred<connection>()
@@ -68,7 +68,7 @@ async function onrequest(request: request) {
   
   log(`[onrequest] Client ${clientConnection.remoteAddress} connected`)
 
-  const serviceConnection: connection = await connect2Service('wss://www.cryptofacilities.com/ws/v1')
+  const serviceConnection: connection = await connectToService('wss://www.cryptofacilities.com/ws/v1')
 
   clientConnection.on('close', (code: number) => {
     log(`[clientConnection.close] Client ${clientConnection.remoteAddress} disconnected with code ${code}`)

@@ -139,6 +139,12 @@ export default class OrderBookModel extends EventEmitter {
           
           case ClientEventType.ORDERS:
             // log('[orderProvider.onmessage] Orders change', clientEvent)
+            this.setUI({
+              orders: {
+                bids: clientEvent.bids,
+                asks: clientEvent.asks,
+              }
+            })
             break
         }
   }
