@@ -7,7 +7,10 @@ import { amountFormatter, priceFormatter } from '../../utils/formatters'
 export default function OrderBook(): JSX.Element {
   const {
     market,
+    orders,
+    groupSize,
     isFeedKilled,
+    groupSizeChange,
     toggleFeedClick,
     killFeedClick,
   } = useOrderBook()
@@ -19,9 +22,10 @@ export default function OrderBook(): JSX.Element {
         <h3>Order Book</h3>
         <div>Spread 17.0 (0.05%)</div>
         <Select
-          defaultValue="0.01"
+          value={groupSize}
           className={styles.groupSelect}
           size="small"
+          onChange={groupSizeChange}
         >
           {market.sizes.map(size => (
             <Select.Option key={size} value={size}>{size}</Select.Option>
@@ -30,34 +34,46 @@ export default function OrderBook(): JSX.Element {
       </div>
 
       <div className={styles.body}>
-        {/* <Table className={styles.buyTable} size="small" dataSource={data} pagination={false}>
+        <Table
+          className={styles.buyTable}
+          size="small"
+          dataSource={orders?.bids}
+          pagination={false}
+          scroll={{ y: 340 }}
+        >
           <Table.Column
             title="TOTAL"
-            dataIndex="total"
+            dataIndex={2}
             key="total"
             align="left"
             render={(value) => amountFormatter.format(value)}
           />
           <Table.Column
             title="SIZE"
-            dataIndex="size"
+            dataIndex={1}
             key="size"
             align="center"
             render={(value) => amountFormatter.format(value)}
           />
           <Table.Column
             title="PRICE"
-            dataIndex="price"
+            dataIndex={0}
             key="price"
             align="right"
             className={styles.bidPrice}
             render={(value) => priceFormatter.format(value)}
           />
         </Table>
-        <Table className={styles.sellTable} size="small" dataSource={data} pagination={false}>
+        <Table
+          className={styles.sellTable}
+          size="small"
+          dataSource={orders?.asks}
+          pagination={false}
+          scroll={{ y: 340 }}
+        >
           <Table.Column
             title="PRICE"
-            dataIndex="price"
+            dataIndex={0}
             key="price"
             align="left"
             className={styles.askPrice}
@@ -65,19 +81,19 @@ export default function OrderBook(): JSX.Element {
           />
           <Table.Column
             title="SIZE"
-            dataIndex="size"
+            dataIndex={1}
             key="size"
             align="center"
             render={(value) => amountFormatter.format(value)}
           />
           <Table.Column
             title="TOTAL"
-            dataIndex="total"
+            dataIndex={2}
             key="total"
             align="right"
             render={(value) => amountFormatter.format(value)}
           />
-        </Table> */}
+        </Table>
       </div>
 
       <div className={styles.footer}>

@@ -16,6 +16,7 @@ import { TypeFeed } from '../utils/messageEvents'
 const log = debug('app:wsProxy')
 const logerr = debug('app:wsProxy:error')
 
+// [Websocket] Proxy => Service
 function sendCommandToService(event: CommandType, productId: Market, service: connection) {
   log(`Sending event '${event}' with product '${productId}'`)
   const command: ServiceCommand = {
@@ -27,6 +28,7 @@ function sendCommandToService(event: CommandType, productId: Market, service: co
   service.sendUTF(sendData)
 }
 
+// [Websocket] Client => Proxy
 function onmessage(command: ClientCommand, service: connection) {
 
   switch(command.type) {
@@ -73,6 +75,7 @@ async function onrequest(request: request) {
     serviceConnection.close()
   })
 
+  // [Websocket} Client => Proxy
   clientConnection.on('message', (data: Message) => {
     log('Client message received', data)
 
@@ -83,8 +86,9 @@ async function onrequest(request: request) {
     }
   })
 
+  // [Websocket] Service => Proxy => Client (Browser)
   serviceConnection.on('message', (data: Message) => {
-    log('Service message received', data)
+    // log('Service message received', data)
 
     if (data.type === 'utf8') {
       // Forwarding the data comming from the service (cryptofacilities) to the client (browser)

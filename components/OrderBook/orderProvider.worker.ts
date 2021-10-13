@@ -1,13 +1,33 @@
 import { ClientCommand, CommandType, ServiceCommand, ConnectCommand, SubscribeProduct, UnsubscribeProduct } from '../../utils/command'
 import { orderBookProtocol } from '../../utils/config'
-import { ClientConnected, ClientEventType, ClientOrders, ClientSubscribed, ClientUnsubscribed, ServiceEvent, ServiceEventType, StapShot, TypeFeed } from '../../utils/messageEvents'
+import { ClientConnected, ClientDisconnected, ClientEventType, ClientOrders, ClientSubscribed, ClientUnsubscribed, ServiceEvent, ServiceEventType, StapShot, TypeFeed } from '../../utils/messageEvents'
 
 let wsClient: WebSocket
+let snapshot: {
+  numLevels: number
+  bids: number[][]
+  asks: number[][]
+}
 
-function onmessage(event: MessageEvent) {
+const processOrders = (orders: number[][], sort: 'asc' | 'desc' = 'asc'): number[][] => (
+  orders
+    // make sure it's sorted
+    .sort((order1: number[], order2: number[]) => (
+      (order1[0] > order2[0] ? 1 : -1) * (sort === 'asc' ? 1 : -1)
+    ))
+    // calculate and add total size column (current size + accumulated)
+    .reduce((acc: number[][], order: number[]) => {
+      const totalSize = order[1] + (acc[acc.length-1] ? acc[acc.length-1][2] : 0)
+      acc.push([...order, totalSize])
+      return acc
+    }, [])
+)
+
+// [Websocket] Service to Worker
+function onmessage(event: MessageEvent): void {
   const serviceEvent: ServiceEvent = JSON.parse(event.data)
-  console.log('[websocket.onmessage] Event received from service', serviceEvent)
 
+  // [Worker API] Worker => UI
   switch (serviceEvent.event) {
     case ServiceEventType.INFO:
       console.log(`[websocket.onmessage] Client connected`)
@@ -45,38 +65,52 @@ function onmessage(event: MessageEvent) {
       if (serviceEvent.feed === TypeFeed.BOOK_SNAPSHOT) {
         console.log(`[websocket.onmessage] Orders snapshot`)
 
+        snapshot = {
+          numLevels: serviceEvent.numLevels,
+          bids: processOrders(serviceEvent.bids, 'desc'),
+          asks: processOrders(serviceEvent.asks, 'asc'),
+        }
+
         const snapShotMsg: StapShot = {
           event: ClientEventType.SNAPSHOT,
-          numLevels: serviceEvent.numLevels,
-          bids: serviceEvent.bids,
-          asks: serviceEvent.asks,
+          ...snapshot,
         }
 
         self.postMessage(snapShotMsg)
-      } else {
-        console.log(`[websocket.onmessage] Incomming orders`)
+      } else if (serviceEvent.feed === TypeFeed.BOOK) {
+        // console.log(`[websocket.onmessage] Incomming orders`)
 
         const ordersMsg: ClientOrders = {
           event: ClientEventType.ORDERS,
+          // TODO: Think about better format for the UI
           bids: serviceEvent.bids,
           asks: serviceEvent.asks,
         }
 
         self.postMessage(ordersMsg)
+      } else {
+        // TODO
       }
       
       break
   }
 }
 
-function onerror(err: Event) {
+function onerror(err: Event): void {
   console.error('[websocket.onerror] There was an error', err)
 }
 
-function onclose(event: CloseEvent) {
+function onclose(event: CloseEvent): void {
   console.log('[websocket.onclose] Socket closed')
+
+  const disconnecteddMsg: ClientDisconnected = {
+    event: ClientEventType.DISCONNECTED
+  }
+
+  self.postMessage(disconnecteddMsg)
 }
 
+// [Worker API] UI => Worker
 self.addEventListener('message', (event: MessageEvent<ClientCommand>) => {
   console.log('[worker.onmessage] Command received', event.data)
 
