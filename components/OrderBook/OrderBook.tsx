@@ -2,7 +2,7 @@ import { Select, Button, Table } from 'antd'
 
 import styles from './OrderBook.module.css'
 import useOrderBook from './useOrderBook'
-import { amountFormatter, priceFormatter } from '../../utils/formatters'
+import OrderTable from './OrderTable'
 
 export default function OrderBook(): JSX.Element {
   const {
@@ -47,68 +47,8 @@ export default function OrderBook(): JSX.Element {
       </div>
 
       <div className={styles.body}>
-        <Table
-          className={styles.buyTable}
-          size="small"
-          dataSource={orders?.bids}
-          pagination={false}
-          scroll={{ y: 340 }}
-          rowKey={(order: number[]) => order[0]}
-        >
-          <Table.Column
-            title="TOTAL"
-            dataIndex={2}
-            key="total"
-            align="left"
-            render={(value) => amountFormatter.format(value)}
-          />
-          <Table.Column
-            title="SIZE"
-            dataIndex={1}
-            key="size"
-            align="center"
-            render={(value) => amountFormatter.format(value)}
-          />
-          <Table.Column
-            title="PRICE"
-            dataIndex={0}
-            key="price"
-            align="right"
-            className={styles.bidPrice}
-            render={(value) => priceFormatter.format(value)}
-          />
-        </Table>
-        <Table
-          className={styles.sellTable}
-          size="small"
-          dataSource={orders?.asks}
-          pagination={false}
-          scroll={{ y: 340 }}
-          rowKey={(order: number[]) => order[0]}
-        >
-          <Table.Column
-            title="PRICE"
-            dataIndex={0}
-            key="price"
-            align="left"
-            className={styles.askPrice}
-            render={(value) => priceFormatter.format(value)}
-          />
-          <Table.Column
-            title="SIZE"
-            dataIndex={1}
-            key="size"
-            align="center"
-            render={(value) => amountFormatter.format(value)}
-          />
-          <Table.Column
-            title="TOTAL"
-            dataIndex={2}
-            key="total"
-            align="right"
-            render={(value) => amountFormatter.format(value)}
-          />
-        </Table>
+        <OrderTable type="buy" orders={orders?.bids} />
+        <OrderTable type="sell" orders={orders?.asks} />
       </div>
 
       <div className={styles.footer}>

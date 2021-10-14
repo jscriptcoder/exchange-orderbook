@@ -33,6 +33,19 @@
   font-family: monospace;
 }
 
+.buyTable,
+.sellTable {
+  flex: 1;
+}
+
+.bidPrice {
+  color: rgb(14, 203, 129);
+}
+
+.askPrice {
+  color: rgb(246, 70, 93);
+}
+
 .footer {
   display: flex;
   justify-content: center;
