@@ -184,6 +184,11 @@ export default class OrderBookModel extends EventEmitter {
     this.worker?.postMessage(serverErrorCmd)
   }
 
+  restartServer(): void {
+    const connectCmd: ConnectCommand = { type: CommandType.CONNECT }
+    this.worker?.postMessage(connectCmd)
+  }
+
   destroy(): void {
     this.disconnect()
 

@@ -74,8 +74,15 @@ export default function useOrderBook() {
   }, [uiState, orderBook])
 
   const killFeedClick = useCallback(() => {
-    killFeed(!isFeedKilled)
-    orderBook.triggerServerError()
+    const killServer = !isFeedKilled
+    killFeed(killServer)
+
+    if (killServer) {
+      orderBook.triggerServerError()
+    } else {
+      orderBook.restartServer()
+    }
+    
   }, [isFeedKilled, orderBook])
 
   return {
