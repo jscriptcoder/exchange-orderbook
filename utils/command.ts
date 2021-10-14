@@ -7,6 +7,7 @@ export enum CommandType {
   CONNECT = 'connect',
   DISCONNECT = 'disconnect',
   TRIGGERERROR = 'triggererror',
+  CHANGEGROUP = 'changegroup',
 }
 
 export interface ConnectCommand {
@@ -35,12 +36,20 @@ export interface UnsubscribeProduct {
   }
 }
 
+export interface ChangeGroup {
+  type: CommandType.CHANGEGROUP,
+  payload: {
+    groupSize: number
+  }
+}
+
 export type ClientCommand 
   = ConnectCommand 
   | DisconnectCommand 
   | SubscribeProduct 
   | UnsubscribeProduct
   | ServerErrorCommand
+  | ChangeGroup
 
 export interface ServiceCommand {
   event: CommandType

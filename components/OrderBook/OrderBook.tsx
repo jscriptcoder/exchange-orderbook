@@ -22,6 +22,7 @@ export default function OrderBook(): JSX.Element {
 
       <div className={styles.header}>
         <h3>Order Book</h3>
+        
         <div>
           Spread:
           {' '}

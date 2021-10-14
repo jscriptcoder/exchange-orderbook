@@ -43,7 +43,7 @@ export default function useOrderBook() {
     orderBook.connect()
     
     return () => orderBook.destroy()
-  }, [])
+  }, [orderBook])
 
   const spread = useMemo(() => orderBook.spread, [orderBook.spread])
 
@@ -80,7 +80,7 @@ export default function useOrderBook() {
     if (killServer) {
       orderBook.triggerServerError()
     } else {
-      orderBook.restartServer()
+      orderBook.connect()
     }
     
   }, [isFeedKilled, orderBook])

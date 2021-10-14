@@ -1,6 +1,7 @@
 import debug from 'debug'
 import EventEmitter from 'events'
 import {
+  ChangeGroup,
   CommandType,
   ConnectCommand,
   DisconnectCommand,
@@ -29,6 +30,16 @@ export interface OrderBookModelUI {
   orders?: Orders
 }
 
+interface InfoPriceLevel {
+  price: number,
+  size: number,
+  total: number,
+}
+
+interface PriceLevels {
+  [price: string]: InfoPriceLevel
+}
+
 export default class OrderBookModel extends EventEmitter {
   ui: OrderBookModelUI
   worker: OptionalWorker
@@ -41,6 +52,8 @@ export default class OrderBookModel extends EventEmitter {
       market: defaultMarket,
       groupSize: defaultMarket.sizes[0],
     }
+
+    this._setGroupSize(defaultMarket.sizes[0])
   }
 
   setWorker(worker: Worker): void {
@@ -50,7 +63,15 @@ export default class OrderBookModel extends EventEmitter {
   }
 
   setUI(ui: OrderBookModelUI = {}): void {
+    const oldGroupSize: number = <number>this.ui.groupSize
+
     this.ui = {...this.ui, ...ui}
+
+    // We're gonna communicate the worker about this change
+    if (ui.groupSize && oldGroupSize !== ui.groupSize) {
+      this._setGroupSize(<number>ui.groupSize)
+    }
+
     this.emit('uichange', this.ui)
   }
 
@@ -179,14 +200,17 @@ export default class OrderBookModel extends EventEmitter {
     this.emit('error', error)
   }
 
+  private _setGroupSize(groupSize: number) {
+    const groupSizeCmd: ChangeGroup = {
+      type: CommandType.CHANGEGROUP,
+      payload: { groupSize }
+    }
+    this.worker?.postMessage(groupSizeCmd)
+  }
+
   triggerServerError(): void {
     const serverErrorCmd: ServerErrorCommand = { type: CommandType.TRIGGERERROR }
     this.worker?.postMessage(serverErrorCmd)
-  }
-
-  restartServer(): void {
-    const connectCmd: ConnectCommand = { type: CommandType.CONNECT }
-    this.worker?.postMessage(connectCmd)
   }
 
   destroy(): void {
