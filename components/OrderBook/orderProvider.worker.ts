@@ -16,6 +16,9 @@ import {
   ServiceEventType,
   OrdersStapShot,
   TypeFeed,
+  ClientError,
+  ServiceClosed,
+  ServiceError,
 } from '../../utils/messageEvents'
 
 type Sort = 'asc' | 'desc'
@@ -59,12 +62,12 @@ export const mergeChangesAndProcess = (changes: number[][], orders: number[][], 
     }
   })
   
-  return processOrders(orders, sort)
+  return processOrders(orders, sort, limit)
 
 }
 
 // [Websocket] Service to Worker
-function onmessage(event: MessageEvent): void {
+function onWSmessage(event: MessageEvent): void {
   const serviceEvent: ServiceEvent = JSON.parse(event.data)
 
   // [Worker API] Worker => UI
@@ -101,6 +104,20 @@ function onmessage(event: MessageEvent): void {
       self.postMessage(unsubscribedMsg)
       break
 
+    case ServiceEventType.CLOSED:
+      console.log(`[wsClient.message] Service closed with code ${serviceEvent.code}`)
+
+      // Forward the message to the UI
+      self.postMessage(serviceEvent)
+      break
+    
+    case ServiceEventType.ERROR:
+      console.log('[wsClient.message] Service error:', serviceEvent.error)
+
+      // Forward the message to the UI
+      self.postMessage(serviceEvent)
+      break
+    
     default: // Orders are comming
       if (serviceEvent.feed === TypeFeed.BOOK_SNAPSHOT) {
         console.log(`[wsClient.message] Orders snapshot`)
@@ -135,18 +152,25 @@ function onmessage(event: MessageEvent): void {
   }
 }
 
-function onerror(err: Event): void {
-  console.error('[wsClient.error] There was an error', err)
+function onWSerror(error: Event): void {
+  console.error('[wsClient.error] There was an error:', error)
+
+  const errorMsg: ClientError = {
+    event: ClientEventType.ERROR,
+    error,
+  }
+
+  self.postMessage(errorMsg)
 }
 
-function onclose(event: CloseEvent): void {
+function onWSclose(event: CloseEvent): void {
   console.log('[websocket.onclose] Socket closed')
 
-  const disconnecteddMsg: ClientDisconnected = {
+  const disconnectedMsg: ClientDisconnected = {
     event: ClientEventType.DISCONNECTED
   }
 
-  self.postMessage(disconnecteddMsg)
+  self.postMessage(disconnectedMsg)
 }
 
 // [Worker API] UI => Worker
@@ -166,9 +190,9 @@ self.addEventListener('message', (event: MessageEvent<ClientCommand>) => {
       console.log(`[orderBookWorker.message] Connecting to 'ws://0.0.0.0:${port}', protocol '${orderBookProtocol}'`)
       wsClient = new WebSocket(`ws://0.0.0.0:${port}`, orderBookProtocol)
 
-      wsClient.addEventListener('message', onmessage)
-      wsClient.addEventListener('error', onerror)
-      wsClient.addEventListener('close', onclose)
+      wsClient.addEventListener('message', onWSmessage)
+      wsClient.addEventListener('error', onWSerror)
+      wsClient.addEventListener('close', onWSclose)
 
       break
 
@@ -201,11 +225,16 @@ self.addEventListener('message', (event: MessageEvent<ClientCommand>) => {
       break
     
     case CommandType.DISCONNECT:
-      wsClient.removeEventListener('message', onmessage)
-      wsClient.removeEventListener('error', onerror)
-      wsClient.removeEventListener('close', onclose)
+      wsClient.removeEventListener('message', onWSmessage)
+      wsClient.removeEventListener('error', onWSerror)
+      wsClient.removeEventListener('close', onWSclose)
 
       wsClient.close()
+      break
+      
+    case CommandType.TRIGGERERROR:
+      // Forward the command to the server, asking to trigger an error there
+      wsClient.send(JSON.stringify(command))
       break
   }
 })

@@ -4,6 +4,8 @@ export enum ServiceEventType {
   INFO = 'info',
   SUBSCRIBED = 'subscribed',
   UNSUBSCRIBED = 'unsubscribed',
+  CLOSED = 'closed',
+  ERROR = 'error',
 }
 
 export enum TypeFeed {
@@ -45,12 +47,24 @@ export interface ServiceOrders {
   asks: number[][]
 }
 
+export interface ServiceClosed {
+  event: ServiceEventType.CLOSED
+  code: number,
+}
+
+export interface ServiceError {
+  event: ServiceEventType.ERROR
+  error: Error,
+}
+
 export type ServiceEvent 
   = ServiceInfo 
   | ServiceSubscribed 
   | ServiceUnsubscribed 
   | ServiceSnapshot 
   | ServiceOrders
+  | ServiceClosed
+  | ServiceError
 
 export enum ClientEventType {
   CONNECTED = 'connected',
@@ -59,6 +73,7 @@ export enum ClientEventType {
   UNSUBSCRIBED = 'unsubscribed',
   SNAPSHOT = 'snapshot',
   ORDERS = 'orders',
+  ERROR = 'error',
 }
 
 export interface ClientConnected {
@@ -92,6 +107,11 @@ export interface OrdersChange {
   asks: number[][]
 }
 
+export interface ClientError {
+  event: ClientEventType.ERROR,
+  error: Event,
+}
+
 export type ClientEvent 
   = ClientConnected 
   | ClientDisconnected 
@@ -99,3 +119,6 @@ export type ClientEvent
   | ClientUnsubscribed 
   | OrdersStapShot 
   | OrdersChange
+  | ClientError
+  | ServiceClosed
+  | ServiceError

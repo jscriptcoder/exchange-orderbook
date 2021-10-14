@@ -27,6 +27,6 @@ nextApp.prepare()
     wsStart(httpServer)
 
   })
-  .catch(err => {
-    logerr(err)
+  .catch(error => {
+    logerr('[nextApp] Server error>', error)
   })

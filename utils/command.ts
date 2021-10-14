@@ -6,6 +6,7 @@ export enum CommandType {
   UNSUBSCRIBE = 'unsubscribe',
   CONNECT = 'connect',
   DISCONNECT = 'disconnect',
+  TRIGGERERROR = 'triggererror',
 }
 
 export interface ConnectCommand {
@@ -14,6 +15,10 @@ export interface ConnectCommand {
 
 export interface DisconnectCommand {
   type: CommandType.DISCONNECT
+}
+
+export interface ServerErrorCommand {
+  type: CommandType.TRIGGERERROR
 }
 
 export interface SubscribeProduct {
@@ -35,6 +40,7 @@ export type ClientCommand
   | DisconnectCommand 
   | SubscribeProduct 
   | UnsubscribeProduct
+  | ServerErrorCommand
 
 export interface ServiceCommand {
   event: CommandType

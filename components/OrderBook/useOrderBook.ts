@@ -3,11 +3,18 @@ import {
   useCallback,
   useEffect,
   useRef,
-  useMemo
+  useMemo,
 } from 'react'
+import { notification } from 'antd'
 import debug from 'debug'
 import markets, { Market } from '../../utils/markets'
 import OrderBookModel, { OrderBookModelUI } from './OrderBookModel'
+import {
+  ServiceClosedMsg,
+  ServiceErrorMsg,
+  ClientDisconnectMsg,
+  ClientErrorMsg
+} from './notifyMessages'
 
 const log = debug('app:useOrderBook')
 const logerr = debug('app:useOrderBook:error')
@@ -20,13 +27,19 @@ export interface Orders {
 export default function useOrderBook() {
   const [ isFeedKilled, killFeed ] = useState<boolean>(false)
   const workerRef = useRef<Worker>()
-  const [ orderBook, setOrderBook ] = useState(new OrderBookModel(markets.PI_XBTUSD))
+  const [ orderBook ] = useState(new OrderBookModel(markets.PI_XBTUSD))
   const [ uiState, setUIState ] = useState<OrderBookModelUI>(orderBook.ui)
 
   useEffect(() => {
     workerRef.current = new Worker(new URL('./orderProvider.worker.ts', import.meta.url))
     orderBook.setWorker(workerRef.current)
+
     orderBook.on('uichange', () => setUIState(orderBook.ui))
+    orderBook.on('serviceclosed', (code: number) => notification.warn(ServiceClosedMsg(code)))
+    orderBook.on('servicerror', (error: Error) => notification.error(ServiceErrorMsg(error)))
+    orderBook.on('clientdisconnect', () => notification.warn(ClientDisconnectMsg()))
+    orderBook.on('clienterror', (error: Event) => notification.error(ClientErrorMsg(error)))
+
     orderBook.connect()
     
     return () => orderBook.destroy()
@@ -58,11 +71,12 @@ export default function useOrderBook() {
         orderBook.unsubscribe(Market.PI_ETHUSD)
         break
     }
-  }, [uiState])
+  }, [uiState, orderBook])
 
   const killFeedClick = useCallback(() => {
     killFeed(!isFeedKilled)
-  }, [isFeedKilled])
+    orderBook.triggerServerError()
+  }, [isFeedKilled, orderBook])
 
   return {
     ...uiState,

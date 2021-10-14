@@ -1,9 +1,15 @@
 import debug from 'debug'
-import { MutableRefObject } from 'react'
 import EventEmitter from 'events'
-import { CommandType, ConnectCommand, DisconnectCommand, SubscribeProduct, UnsubscribeProduct } from '../../utils/command'
+import {
+  CommandType,
+  ConnectCommand,
+  DisconnectCommand,
+  ServerErrorCommand,
+  SubscribeProduct,
+  UnsubscribeProduct
+} from '../../utils/command'
 import { Market, MarketInfo } from '../../utils/markets'
-import { ClientEvent, ClientEventType } from '../../utils/messageEvents'
+import { ClientEvent, ClientEventType, ServiceEventType } from '../../utils/messageEvents'
 
 const log = debug('app:OrderBookModel')
 const logerr = debug('app:OrderBookModel:error')
@@ -49,34 +55,34 @@ export default class OrderBookModel extends EventEmitter {
   }
 
   subscribe(productId: OptionalMarket = this.ui.market?.name): void {
-    if (productId && this.worker) {
+    if (productId) {
       const subscribeCmd: SubscribeProduct = {
         type: CommandType.SUBSCRIBE,
         payload: { productId }
       }
   
-      this.worker.postMessage(subscribeCmd)
+      this.worker?.postMessage(subscribeCmd)
     }
   }
 
   unsubscribe(productId: OptionalMarket = this.ui.market?.name): void {
-    if (productId && this.worker) {
+    if (productId) {
       const unsubscribeCmd: UnsubscribeProduct = {
         type: CommandType.UNSUBSCRIBE,
         payload: { productId }
       }
-      this.worker.postMessage(unsubscribeCmd)
+      this.worker?.postMessage(unsubscribeCmd)
     }
   }
 
   connect(): void {
     const connectCmd: ConnectCommand = { type: CommandType.CONNECT }
-    this.worker && this.worker.postMessage(connectCmd)
+    this.worker?.postMessage(connectCmd)
   }
 
   disconnect(): void {
     const disconnectCmd: DisconnectCommand = { type: CommandType.DISCONNECT }
-    this.worker && this.worker.postMessage(disconnectCmd)
+    this.worker?.postMessage(disconnectCmd)
   }
 
   get spread(): [number, number] | null {
@@ -121,10 +127,17 @@ export default class OrderBookModel extends EventEmitter {
           
           case ClientEventType.DISCONNECTED:
             log('[orderProvider.message] Client disconnected with message', clientEvent)
-            this.setUI({
-              state: clientEvent.event,
-              orders: undefined
-            })
+            // this.setUI({
+            //   state: clientEvent.event,
+            //   orders: undefined
+            // })
+            this.emit('clientdisconnect')
+            break
+          
+          case ClientEventType.ERROR:
+            const clientError: Event = clientEvent.error
+            log('[orderProvider.message] Client error:', clientError)
+            this.emit('clienterror', clientError)
             break
           
           case ClientEventType.SNAPSHOT:
@@ -146,11 +159,29 @@ export default class OrderBookModel extends EventEmitter {
               }
             })
             break
+          
+          case ServiceEventType.CLOSED:
+            const closeCode: number = clientEvent.code
+            log(`[orderProvider.message] Service closed with code ${closeCode}`)
+            this.emit('serviceclosed', closeCode)
+            break
+          
+          case ServiceEventType.ERROR:
+            const serviceError: Error = clientEvent.error
+            log('[orderProvider.message] Service error', serviceError)
+            this.emit('servicerror', serviceError)
+            break
         }
   }
 
-  private _onError = (err: ErrorEvent): void => {
-    logerr('Error ocurred', err)
+  private _onError = (error: ErrorEvent): void => {
+    logerr('Error ocurred', error)
+    this.emit('error', error)
+  }
+
+  triggerServerError(): void {
+    const serverErrorCmd: ServerErrorCommand = { type: CommandType.TRIGGERERROR }
+    this.worker?.postMessage(serverErrorCmd)
   }
 
   destroy(): void {
