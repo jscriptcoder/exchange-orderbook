@@ -89,7 +89,7 @@ export default function useOrderBook() {
   const priceDecimals = useMemo(() => {
     const { groupSize } = orderBook.ui
     return `${groupSize}`?.split('.')[1]?.length ?? 0
-  }, [orderBook.ui.groupSize])
+  }, [orderBook.ui])
 
   return {
     ...uiState,

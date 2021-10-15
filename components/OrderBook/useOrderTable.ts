@@ -26,7 +26,7 @@ export default function useOrderTable(type: TypeOrder) {
   
       return () => mediaQuery.removeEventListener('change', mediaQueryListener)
     }
-  }, [setFlipTable])
+  }, [type, mediaQueryListener])
 
   return flipTable
 }
