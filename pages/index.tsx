@@ -10,6 +10,7 @@ const Index: NextPage = () => {
       <Head>
         <title>..:: MyBit - Order Book ::..</title>
         <meta name="description" content="Implementation of an Exchange OrderBook" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
