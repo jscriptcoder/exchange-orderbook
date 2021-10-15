@@ -15,6 +15,7 @@ import {
   ClientDisconnectMsg,
   ClientErrorMsg
 } from './notifyMessages'
+import { defaultMarket } from '../../utils/config'
 
 const log = debug('app:useOrderBook')
 const logerr = debug('app:useOrderBook:error')
@@ -27,7 +28,7 @@ export interface Orders {
 export default function useOrderBook() {
   const [ isFeedKilled, killFeed ] = useState<boolean>(false)
   const workerRef = useRef<Worker>()
-  const [ orderBook ] = useState(new OrderBookModel(markets.PI_XBTUSD))
+  const [ orderBook ] = useState(new OrderBookModel(defaultMarket))
   const [ uiState, setUIState ] = useState<OrderBookModelUI>(orderBook.ui)
 
   useEffect(() => {
@@ -85,10 +86,16 @@ export default function useOrderBook() {
     
   }, [isFeedKilled, orderBook])
 
+  const priceDecimals = useMemo(() => {
+    const { groupSize } = orderBook.ui
+    return `${groupSize}`?.split('.')[1]?.length ?? 0
+  }, [orderBook.ui.groupSize])
+
   return {
     ...uiState,
     spread,
     isFeedKilled,
+    priceDecimals,
     groupSizeChange,
     toggleFeedClick,
     killFeedClick,

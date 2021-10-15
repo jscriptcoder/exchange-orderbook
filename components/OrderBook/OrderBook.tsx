@@ -6,12 +6,12 @@ import OrderTable from './OrderTable'
 
 export default function OrderBook(): JSX.Element {
   const {
-    state,
     market,
     groupSize,
     orders,
     spread,
     isFeedKilled,
+    priceDecimals,
     groupSizeChange,
     toggleFeedClick,
     killFeedClick,
@@ -47,8 +47,16 @@ export default function OrderBook(): JSX.Element {
       </div>
 
       <div className={styles.body}>
-        <OrderTable type="buy" orders={orders?.bids} />
-        <OrderTable type="sell" orders={orders?.asks} />
+        <OrderTable
+          type="buy"
+          orders={orders?.bids}
+          priceDecimals={priceDecimals}
+        />
+        <OrderTable
+          type="sell"
+          orders={orders?.asks}
+          priceDecimals={priceDecimals}
+        />
       </div>
 
       <div className={styles.footer}>

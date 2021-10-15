@@ -1,5 +1,12 @@
-export const amountFormatter = new Intl.NumberFormat('en-US')
+export const amountFormat = (value: number) => {
+  const formatter = new Intl.NumberFormat('en-US')
+  return formatter.format(value)
+}
 
-export const priceFormatter = new Intl.NumberFormat('en-US', {
-  minimumFractionDigits: 2,
-})
+export const priceFormat = (value: number, decimals: number = 2) => {
+  const formatter = new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: decimals,
+  })
+
+  return formatter.format(value)
+}
