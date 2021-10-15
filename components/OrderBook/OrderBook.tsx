@@ -1,4 +1,4 @@
-import { Select, Button, Table } from 'antd'
+import { Select, Button, Row, Col } from 'antd'
 
 import styles from './OrderBook.module.css'
 import useOrderBook from './useOrderBook'
@@ -22,8 +22,8 @@ export default function OrderBook(): JSX.Element {
 
       <div className={styles.header}>
         <h3>Order Book</h3>
-        
-        <div>
+
+        <div className={styles.spreadDesktop}>
           Spread:
           {' '}
           <span className={styles.spread}>
@@ -52,6 +52,18 @@ export default function OrderBook(): JSX.Element {
           orders={orders?.bids}
           priceDecimals={priceDecimals}
         />
+
+        <div className={styles.spreadSmall}>
+          Spread:
+          {' '}
+          <span className={styles.spread}>
+            {spread
+              ? `${spread[0].toFixed(1)} (${spread[1].toFixed(2)}%)`
+              : '...'
+            }
+          </span>
+        </div>
+        
         <OrderTable
           type="sell"
           orders={orders?.asks}

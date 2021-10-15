@@ -2,7 +2,6 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: rgb(24, 26, 32);
 }
 
 .header {
@@ -43,6 +42,6 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 32px;
+  padding: 8px 0;
   color: rgb(240, 185, 11);
 }

@@ -27,6 +27,16 @@
 
 .body {
   display: flex;
+  flex-direction: column;
+}
+
+.spreadDesktop {
+  display: none;
+}
+
+.spreadSmall {
+  text-align: center;
+  padding: 10px 16px;
 }
 
 .spread {
@@ -53,4 +63,19 @@
 
 .killFeedButton {
   background-color: firebrick;
-} 
+}
+
+@media (min-width: 768px) {
+  .body {
+    display: flex;
+    flex-direction: row;
+  }
+
+  .spreadDesktop {
+    display: block;
+  }
+
+  .spreadSmall {
+    display: none;
+  }
+}
