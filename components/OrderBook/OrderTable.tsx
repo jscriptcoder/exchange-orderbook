@@ -3,22 +3,24 @@ import PropTypes from 'prop-types'
 
 import styles from './OrderTable.module.css'
 import { amountFormat, priceFormat } from '../../utils/formatters'
+import useOrderTable, { TypeOrder } from './useOrderTable'
 
 interface OrderTableProps {
-  type: 'buy' | 'sell'
+  type: TypeOrder
   orders: number[][] | undefined
   priceDecimals: number | undefined
 }
 
 export default function OrderTable(props: OrderTableProps): JSX.Element {
   const { type, orders, priceDecimals } = props
+  const flipTable = useOrderTable(type)
 
   const tableColumns = [
     <Table.Column
       title="PRICE"
       dataIndex={0}
       key="price"
-      align={ type === 'buy' ? 'right' : 'left' }
+      align={ flipTable ? 'right' : 'left' }
       className={styles[`${type}Price`]}
       render={(value) => priceFormat(value, priceDecimals)}
     />,
@@ -33,12 +35,12 @@ export default function OrderTable(props: OrderTableProps): JSX.Element {
       title="TOTAL"
       dataIndex={2}
       key="total"
-      align={ type === 'buy' ? 'left' : 'right' }
+      align={ flipTable ? 'left' : 'right' }
       render={(value) => amountFormat(value)}
     />
   ]
 
-  if (type === 'buy') {
+  if (flipTable) {
     tableColumns.reverse()
   }
 
