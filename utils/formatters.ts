@@ -10,3 +10,8 @@ export const priceFormat = (value: number, decimals: number = 2) => {
 
   return formatter.format(value)
 }
+
+export const normalize = (value: number, max: number, min: number): number => {
+  if (max - min === 0) return 0
+  return (value - min) / (max - min)
+}

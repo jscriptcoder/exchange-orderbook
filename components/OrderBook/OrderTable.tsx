@@ -1,8 +1,8 @@
 import { Table } from 'antd'
-import PropTypes from 'prop-types'
+import PropTypes, { number } from 'prop-types'
 
 import styles from './OrderTable.module.css'
-import { amountFormat, priceFormat } from '../../utils/formatters'
+import { amountFormat, normalize, priceFormat } from '../../utils/formatters'
 import useOrderTable, { TypeOrder } from './useOrderTable'
 
 interface OrderTableProps {
@@ -13,7 +13,10 @@ interface OrderTableProps {
 
 export default function OrderTable(props: OrderTableProps): JSX.Element {
   const { type, orders, priceDecimals } = props
-  const flipTable = useOrderTable(type)
+  const {
+    flipTable,
+    maxTotal,
+  } = useOrderTable(type, orders)
 
   const tableColumns = [
     <Table.Column
@@ -22,7 +25,23 @@ export default function OrderTable(props: OrderTableProps): JSX.Element {
       key="price"
       align={ flipTable ? 'right' : 'left' }
       className={styles[`${type}Price`]}
-      render={(value) => priceFormat(value, priceDecimals)}
+      render={(value: number, order: number[]) => {
+        // calculate the width of the total bar, normalizing
+        // between 0 and 360px
+        const width: number = normalize(order[2], maxTotal, 0) * 360
+        return (
+          <div>
+            <span>{priceFormat(value, priceDecimals)}</span>
+            <div
+              className={styles[`${type}TotalBar`]}
+              style={{
+                width,
+                [flipTable ? 'right' : 'left']: 0
+              }}
+            />
+          </div>
+        )
+      }}
     />,
     <Table.Column
       title="SIZE"

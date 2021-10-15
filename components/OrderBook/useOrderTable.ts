@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 export type TypeOrder = 'buy' | 'sell'
 
-export default function useOrderTable(type: TypeOrder): boolean {
+export default function useOrderTable(type: TypeOrder, orders: number[][] | undefined) {
   // This state variable will indicate where or not to flip the buy table.
   // This is needed to be able to properly display the tables in desktop
   // and small devices
@@ -31,5 +31,11 @@ export default function useOrderTable(type: TypeOrder): boolean {
     }
   }, [type, mediaQueryListener])
 
-  return flipTable
+  const totals: number[] | undefined = orders?.map((order: number[]): number => order[2]) ?? []
+  const maxTotal = Math.max(...totals)
+
+  return {
+    flipTable,
+    maxTotal,
+  }
 }

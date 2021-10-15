@@ -3,6 +3,22 @@
   flex: 1;
 }
 
+.buyTotalBar,
+.sellTotalBar {
+  position: absolute;
+  top: 0;
+  opacity: 0.1;
+  height: 100%;
+}
+
+.buyTotalBar {
+  background-color: rgb(14, 203, 129);
+}
+
+.sellTotalBar {
+  background-color: rgb(246, 70, 93);
+}
+
 .buyPrice {
   color: rgb(14, 203, 129);
 }
