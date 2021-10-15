@@ -1,3 +1,15 @@
+/**
+ * This guy will serve as WebSocket proxy between client (browser)
+ * and service (cryptofacilities)
+ * Browser <=> wsProxy <=> Cryptofacilities
+ * 
+ * The initial idea was to do some preprocessing on the server side,
+ * but this didn't happen at the end. I'm aware of the fact that CORS 
+ * policies don't apply to data transmitted via WbeSocket as CORS only 
+ * places such restriction on HTTP responses, so such proxy is not needed.
+ * [DEPRECATED]
+ */
+
 import {
   client as WebSocketClient,
   server as WebSocketServer,

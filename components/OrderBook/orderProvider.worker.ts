@@ -1,6 +1,7 @@
 import {
   ClientCommand,
   CommandType,
+  ServiceCommand,
   SubscribeProduct,
   UnsubscribeProduct
 } from '../../utils/command'
@@ -30,7 +31,7 @@ let wsClient: WebSocket
 let currentOrders: CurrentOrders
 let groupSize: number = defaultGroupSize
 
-// [Websocket] Service to Worker
+// [Websocket] Service => Worker
 function onWSmessage(event: MessageEvent): void {
   const serviceEvent: ServiceEvent = JSON.parse(event.data)
 
@@ -159,7 +160,8 @@ self.addEventListener('message', (event: MessageEvent<ClientCommand>) => {
       const port: number = parseInt(process.env.PORT || '3000', 10)
 
       console.log(`[orderBookWorker.message] Connecting to '${wsUrl}', protocol '${orderBookProtocol}'`)
-      wsClient = new WebSocket(wsUrl, orderBookProtocol)
+      // wsClient = new WebSocket(wsUrl, orderBookProtocol)
+      wsClient = new WebSocket(wsUrl)
 
       wsClient.addEventListener('message', onWSmessage)
       wsClient.addEventListener('error', onWSerror)
@@ -171,9 +173,16 @@ self.addEventListener('message', (event: MessageEvent<ClientCommand>) => {
       if (wsClient) {
         const { productId } = command.payload
 
-        const subscribeCmd: SubscribeProduct = {
-          type: CommandType.SUBSCRIBE,
-          payload: { productId }
+        // [DEPRECATED]
+        // const subscribeCmd: SubscribeProduct = {
+        //   type: CommandType.SUBSCRIBE,
+        //   payload: { productId }
+        // }
+
+        const subscribeCmd: ServiceCommand = {
+          event: CommandType.SUBSCRIBE,
+          feed: TypeFeed.BOOK,
+          product_ids: [productId],
         }
 
         console.log(`[orderBookWorker.message] Subscribing to ${productId}`)
@@ -185,9 +194,16 @@ self.addEventListener('message', (event: MessageEvent<ClientCommand>) => {
       if (wsClient) {
         const { productId } = command.payload
 
-        const unsubscribeCmd: UnsubscribeProduct = {
-          type: CommandType.UNSUBSCRIBE,
-          payload: { productId }
+        // [DEPRECATED]
+        // const unsubscribeCmd: UnsubscribeProduct = {
+        //   type: CommandType.UNSUBSCRIBE,
+        //   payload: { productId }
+        // }
+
+        const unsubscribeCmd: ServiceCommand = {
+          event: CommandType.UNSUBSCRIBE,
+          feed: TypeFeed.BOOK,
+          product_ids: [productId],
         }
 
         console.log(`[orderBookWorker.message] Unsubscribing from ${productId}`)
@@ -196,6 +212,8 @@ self.addEventListener('message', (event: MessageEvent<ClientCommand>) => {
       break
 
     case CommandType.CHANGEGROUP:
+      // The worker will need this to perform some computation and group the orders
+      // as per market tick size
       groupSize = command.payload.groupSize
       console.log(`[orderBookWorker.message] Setting groupSize to ${groupSize}`)
       break
@@ -212,7 +230,10 @@ self.addEventListener('message', (event: MessageEvent<ClientCommand>) => {
 
     case CommandType.TRIGGERERROR:
       // Forward the command to the server, asking to trigger an error there
-      wsClient?.send(JSON.stringify(command))
+      // wsClient?.send(JSON.stringify(command)) // [DEPRECATED]
+
+      // Let's just close the connection
+      wsClient?.close()
       break
   }
 })

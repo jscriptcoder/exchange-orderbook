@@ -41,6 +41,7 @@ interface PriceLevels {
 }
 
 export default class OrderBookModel extends EventEmitter {
+  // Holds the state needed in the UI
   ui: OrderBookModelUI
   worker: OptionalWorker
 
@@ -67,7 +68,9 @@ export default class OrderBookModel extends EventEmitter {
 
     this.ui = {...this.ui, ...ui}
 
-    // We're gonna communicate the worker about this change
+    // We're gonna communicate the worker about this change.
+    // 'groupSize' is needed for the worker to group the orders
+    // as per market tick size
     if (ui.groupSize && oldGroupSize !== ui.groupSize) {
       this._setGroupSize(<number>ui.groupSize)
     }
@@ -110,6 +113,7 @@ export default class OrderBookModel extends EventEmitter {
     const { orders } = this.ui
 
     if (orders) {
+      // Quoted spread: https://en.wikipedia.org/wiki/Bid%E2%80%93ask_spread
       const midpoint: number = (orders.asks[0][0] + orders.bids[0][0]) / 2
       const diff: number = orders.asks[0][0] - orders.bids[0][0]
       const spread: number = (diff / midpoint) * 100
@@ -119,6 +123,8 @@ export default class OrderBookModel extends EventEmitter {
     return null
   }
 
+
+  // Will handle messages coming from the WebWorker
   private _onMessage = (event: MessageEvent<ClientEvent>): void => {
     const clientEvent: ClientEvent = event.data
 

@@ -3,12 +3,12 @@ import next from 'next'
 import { NextServer } from 'next/dist/server/next'
 import debug from 'debug'
 import { start as wsStart } from './wsProxy'
+import { port, prod, domain } from '../utils/config'
 
 const log = debug('app:index')
 const logerr = debug('app:index:error')
 
-const port: number = parseInt(process.env.PORT || '3000', 10)
-const dev: boolean = process.env.NODE_ENV !== 'production'
+const dev: boolean = !prod
 const nextApp: NextServer = next({ dev })
 const handle = nextApp.getRequestHandler()
 
@@ -21,10 +21,10 @@ nextApp.prepare()
     })
 
     const httpServer = expressApp.listen(port, () => {
-      log(`Server listening on http://localhost:${port} as ${dev ? 'development' : process.env.NODE_ENV}`)
+      log(`Server listening on http://${domain}:${port} as ${dev ? 'development' : 'production'}`)
     })
 
-    wsStart(httpServer)
+    // wsStart(httpServer) // [DEPRECATED]
 
   })
   .catch(error => {
