@@ -19,7 +19,7 @@ $ npm run dev
 
 Have fun :-)
 
-## Running Unit-tests
+## Running unit-tests
 ```shell
 $ npm test
 ```
