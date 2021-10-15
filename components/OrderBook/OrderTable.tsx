@@ -28,7 +28,7 @@ export default function OrderTable(props: OrderTableProps): JSX.Element {
       render={(value: number, order: number[]) => {
         // calculate the width of the total bar, normalizing
         // between 0 and 360px
-        const width: number = normalize(order[2], maxTotal, 0) * 360
+        const width: number = normalize(order[2], maxTotal, 0) * 300
         return (
           <div>
             <span>{priceFormat(value, priceDecimals)}</span>
