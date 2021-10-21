@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 export type TypeOrder = 'buy' | 'sell'
 
 export default function useOrderTable(type: TypeOrder, orders: number[][] | undefined) {
-  // This state variable will indicate where or not to flip the buy table.
+  // This state variable will indicate whether or not to flip the buy table.
   // This is needed to be able to properly display the tables in desktop
   // and small devices
   const [flipTable, setFlipTable] = useState(false)
