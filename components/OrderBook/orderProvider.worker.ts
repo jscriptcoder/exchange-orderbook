@@ -2,8 +2,6 @@ import {
   ClientCommand,
   CommandType,
   ServiceCommand,
-  SubscribeProduct,
-  UnsubscribeProduct
 } from '../../utils/command'
 import { defaultGroupSize, orderBookProtocol, wsUrl } from '../../utils/config'
 import {
@@ -156,8 +154,6 @@ self.addEventListener('message', (event: MessageEvent<ClientCommand>) => {
       if (wsClient) {
         wsClient.close()
       }
-
-      const port: number = parseInt(process.env.PORT || '3000', 10)
 
       console.log(`[orderBookWorker.message] Connecting to '${wsUrl}', protocol '${orderBookProtocol}'`)
       // wsClient = new WebSocket(wsUrl, orderBookProtocol)
