@@ -1,4 +1,4 @@
-# Exchange Order Book
+# Exchange Order Book - Home Assignment Test
 
 This is an implementation of a typical [order book](https://www.coindesk.com/crypto-trading-101-how-to-read-an-exchange-order-book/) one can find in Exchange platforms.
 
